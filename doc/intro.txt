@@ -1,0 +1,4 @@
+Játékprogramot írunk, amiben kér űrhajó harcol egymás ellen, 2D-ben. Az űrhajóknak van egy (esetleg több) lövése. 
+Az nyer, aki lelövi a másikat. Ha az űrhajók összeütköznek, vagy mindketten lelövik a másikat,
+vagy ellövik a töltényeiket, akkor a játék döntetlen. 
+A játéktérben lehetnek akadályok, és lehet gravitáció.
