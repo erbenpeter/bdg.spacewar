@@ -1,5 +1,3 @@
-var WORLD_WIDTH = 1000, WORLD_HEIGHT = 1000;
-
 
 var BACKGROUND_IMAGE_PATH = "background.jpg"
 
@@ -21,6 +19,21 @@ var TYPE_SPACESHIP = 0,
 	TYPE_EXPLOSION = 2,
 	TYPE_PLANET = 3,
 	TYPE_WORLD = 4;
+	
+var STATUS_START = 0,
+	STATUS_RUNNING = 1,
+	STATUS_DRAWN = 2,
+	STATUS_WON_1 = 3,
+	STATUS_WON_2 = 4,
+	STATUS_ERROR = 5;
+	
+var MESSAGE_DRAWN = "Döntetlen!",
+	MESSAGE_WON_1 = "Az 1. játékos nyert.",
+	MESSAGE_WON_2 = "A 2. játékos nyert.",
+	MESSAGE_ERROR = "Hiba!";
+
+var FPS = 2;
+	
 
 
 
@@ -70,94 +83,252 @@ BdgSpacewar.loadCompleted=function() {
 window.addEventListener("load",BdgSpacewar.init);
 
 
-function GameState(t, status, objects) {
-	this.t = t;
-	this.status = status;
-	this.objects = objects;
+
+
+function Game(gameConfiguration,states) {
+	this.gameConfiguration=gameConfiguration;
+	this.states=states;
 }
-GameState.prototype.draw = function(canvasID) {
-	var canvasObj = document.getElementById(canvasID);
-	
-	
-	var width = canvasObj.width;
-	var height = canvasObj.height;
-	
-	var ratio1 = WORLD_WIDTH/width, ratio2 = WORLD_HEIGHT/height;
-	var ratio = ratio1>ratio2 ? ratio1 : ratio2;
-	
-	var context = canvasObj.getContext("2d");
-	context.clearRect(0,0,width,height);
-	
-	context.scale(1/ratio,1/ratio);
-	context.strokeRect(1,1,WORLD_WIDTH-1,WORLD_HEIGHT-1);
-	
-	
-	var bgRatio1 = BdgSpacewar.backgroundImage.width/WORLD_WIDTH, bgRatio2 = BdgSpacewar.backgroundImage.height/WORLD_HEIGHT;
-	var bgRatio = bgRatio1<bgRatio2 ? bgRatio1 : bgRatio2;
-	context.drawImage(
-			BdgSpacewar.backgroundImage,
-			0,
-			0,
-			WORLD_WIDTH*bgRatio,
-			WORLD_HEIGHT*bgRatio,
-			0,
-			0,
-			WORLD_WIDTH,
-			WORLD_HEIGHT
-			)
-	
-	
-	
-	
-	for(var i in this.objects) {
-		var object = this.objects[i];
-		object.draw(context);
-	}
-	context.scale(ratio,ratio);
-}
-GameState.fromCSV=function(csv) {
-	var values_string = csv.split(" ");
+// ["canvasId" : intervalId1, ...]
+Game.intervals = {};
+// ["canvasId" : progress1, ...]
+Game.progress = {};
+
+
+Game.fromCsv=function(csv) {
+	var values_string = csv.split(/\s+/);
 	var values = new Array();
 	
 	for(var string in values_string)
 		values.push( parseFloat(values_string[string]) );
 	
-	var t = values[0];
-	var status = values[1];
-	var n = values[2];
-	var objects = new Array();
-	var index = 3;
-	for(var i=0;i<n;i++) {
-		var id = values[index++];
-		var type = values[index++];
-		var paramNumber = values[index++];
-		var params = new Array();
-		for(var j=0;j<paramNumber;j++) params.push(values[index++]);
-		var object;
-		switch(type) {
-			case TYPE_SPACESHIP:
-				object = new SpaceShip(id,params)
-				break;
-			case TYPE_BULLET:
-				object = new Bullet(id,params);
-				break;
-			case TYPE_EXPLOSION:
-				object = new Explosion(id,params);
-				break;
-			case TYPE_PLANET:
-				object = new Planet(id,params);
-				break;
-			case TYPE_WORLD:
-				object = new World(id,params);
-				break;
-			default:
-				object = new UnknownObject(id,type,params);
-				break;
-		}
-		objects[i] = object;
-	}
-	return new GameState(t,status,objects);
+	
+	this.index=0;
+	var states = new Array();
+	var conf;
+	var lastObj;
+	do {
+		lastObj = GameState.fromValues(values,this);
+		if(lastObj==null) break;
+		if(lastObj.status==STATUS_START) conf = lastObj;
+		else states.push(lastObj);
+	} while(lastObj.status==STATUS_RUNNING || lastObj.status==STATUS_START);
+	
+	return new Game(new GameConfiguration(conf),states);
 }
+Game.prototype.startDrawing=function(canvasId) {
+	clearInterval(Game.intervals[canvasId]);
+	this.canvasId = canvasId;
+	Game.intervals[canvasId] = setInterval(function(game) {
+										game.drawNext(game.canvasId);
+									},1000/FPS,this);
+	Game.progress[canvasId] = 0;
+}
+Game.stopDrawing=function(canvasId) {
+	clearInterval(Game.intervals[canvasId]);
+	delete Game.intervals[canvasId];
+	delete Game.progress[canvasId];
+}
+Game.prototype.drawNext=function(canvasId) {
+
+	
+	if(!this.states[Game.progress[canvasId]]) {
+		Game.stopDrawing(canvasId);
+		return;
+	}
+	
+	
+	this.states[Game.progress[canvasId]++].draw(canvasId,this.gameConfiguration);
+	
+}
+
+
+
+
+
+/**
+  * Converts the gameState object to GameConfiguration object
+  */
+function GameConfiguration(gameState) {
+	this.planets = new Array();
+
+	for(var i in gameState.objects) {
+		var obj = gameState.objects[i];
+		if(obj instanceof World) {
+			this.world = obj;
+		} else if(obj instanceof Planet) {
+			this.planets.push(obj);
+		}
+	}
+}
+
+
+
+function GameState(t, status, objects) {
+	this.t = t;
+	this.status = status;
+	this.objects = objects;
+	/*var isDimensionDefined = false;
+	for(var i=0;i<configuration.objects;i++)
+		if(configuration.objects[i] instanceof World) {
+			isDimensionDefined = true;
+			this.x0 = configuration.objects[i].x0;
+			this.x1 = configuration.objects[i].x1;
+			this.y0 = configuration.objects[i].y0;
+			this.y1 = configuration.objects[i].y1;
+		}
+	if(!isDimensionDefined) throw "The dimension of the GameState object has not been defined in configuration";*/
+}
+GameState.prototype.draw = function(canvasId,gameConfiguration) {
+	var canvasObj = document.getElementById(canvasId);
+	
+	
+	var width = canvasObj.width;
+	var height = canvasObj.height;
+	
+	
+	var worldWidth = gameConfiguration.world.x1-gameConfiguration.world.x0;
+	var worldHeight = gameConfiguration.world.y1-gameConfiguration.world.y0;
+	
+	var ratio1 = worldWidth/width, ratio2 = worldHeight/height;
+	var ratio = ratio1>ratio2 ? ratio1 : ratio2;
+	
+	var bgRatio1 = BdgSpacewar.backgroundImage.width/worldWidth,
+		bgRatio2 = BdgSpacewar.backgroundImage.height/worldHeight;
+		
+	var bgRatio = bgRatio1<bgRatio2 ? bgRatio1 : bgRatio2;
+	
+	var context = canvasObj.getContext("2d");
+	
+	context.clearRect(0,0,width,height);
+	
+	context.scale(1/ratio,1/ratio);
+	
+	
+	context.drawImage(
+			BdgSpacewar.backgroundImage,
+			0,
+			0,
+			worldWidth*bgRatio,
+			worldHeight*bgRatio,
+			0,
+			0,
+			worldWidth,
+			worldHeight
+			);
+	
+	
+	context.translate(-gameConfiguration.world.x0,-gameConfiguration.world.y0);
+	
+	var drawText=function(context,text,gameConfiguration) {
+		context.fillStyle="#CC0";
+		context.textAlign="center";
+		context.font="30px Arial";
+		context.fillText(text,
+						(gameConfiguration.world.x0+gameConfiguration.world.x1)/2,
+						(gameConfiguration.world.y0+gameConfiguration.world.y1)/2);
+	}
+	
+	switch(this.status) {
+		case STATUS_RUNNING:
+	
+			for(var i in gameConfiguration.planets) {
+				var planet = gameConfiguration.planets[i];
+				planet.draw(context);
+			}
+			
+			
+			
+			
+			for(var i in this.objects) {
+				var object = this.objects[i];
+				object.draw(context);
+			}
+			break;
+		case STATUS_DRAWN:
+			drawText(context,MESSAGE_DRAWN,gameConfiguration);
+			break;
+		case STATUS_WON_1:
+			drawText(context,MESSAGE_WON_1,gameConfiguration);
+			break;
+		case STATUS_WON_2:
+			drawText(context,MESSAGE_WON_2,gameConfiguration);
+			break;
+		default:
+			drawText(context,MESSAGE_ERROR,gameConfiguration);
+	}
+			
+	context.translate(gameConfiguration.world.x0,gameConfiguration.world.y0);
+	context.scale(ratio,ratio);
+}
+/**
+  * This should be only called, if we want to draw only this GameState, because it
+  * will draw background.
+  * @param csv The csv in string format
+  */
+GameState.fromCsv=function(csv) {
+	var values_string = csv.split(/\s+/);
+	var values = new Array();
+	
+	for(var string in values_string)
+		values.push( parseFloat(values_string[string]) );
+	
+	return GameState.fromValues(values, null);
+}
+/**
+  * The CSV has been splitted into array of floats.
+  * @param values The array of the floats
+  * @param game	Optional. The Game object, which holdes the starting index.
+  * 			This will be updated.
+  */
+GameState.fromValues=function(values, game) {
+	try {
+		var index = game ? game.index : 0;
+		var t = values[index++];
+		var status = values[index++];
+		var n = values[index++];
+		var objects = new Array();
+		for(var i=0;i<n;i++) {
+			var id = values[index++];
+			var type = values[index++];
+			var paramNumber = values[index++];
+			var params = new Array();
+			for(var j=0;j<paramNumber;j++) params.push(values[index++]);
+			var object;
+			switch(type) {
+				case TYPE_SPACESHIP:
+					object = new SpaceShip(id,params)
+					break;
+				case TYPE_BULLET:
+					object = new Bullet(id,params);
+					break;
+				case TYPE_EXPLOSION:
+					object = new Explosion(id,params);
+					break;
+				case TYPE_PLANET:
+					object = new Planet(id,params);
+					break;
+				case TYPE_WORLD:
+					object = new World(id,params);
+					break;
+				default:
+					object = new UnknownObject(id,type,params);
+					break;
+			}
+			objects[i] = object;
+		}
+		
+		if(values.length<index-1) return null;
+		
+		if(game) game.index=index;
+		return new GameState(t,status,objects);
+		
+		
+	} catch(e) {}
+	return null;
+}
+
+
 
 function SpaceShip(id,params) {
 	this.id=id;
@@ -166,9 +337,7 @@ function SpaceShip(id,params) {
 	this.y=params[1];
 	this.vx=params[2];
 	this.vy=params[3];
-	this.ax=params[4];
-	this.ay=params[5];
-	this.d=Math.toRadians(params[6]);
+	this.d=Math.toRadians(params[4]);
 }
 SpaceShip.prototype.draw=function(context) {
 	context.translate(this.x,this.y);
