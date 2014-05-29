@@ -57,7 +57,7 @@ public class SpaceWar extends Thread {
 		this.objs.add(new Obj.ObjPlanet(0, 0, 100));
 		this.status = Constants.STATUS_START;
 		try {
-			this.pw = new PrintWriter("round.spacewar");
+			this.pw = new PrintWriter("be.txt");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
