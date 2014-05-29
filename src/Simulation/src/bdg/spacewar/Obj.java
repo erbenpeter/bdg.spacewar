@@ -54,7 +54,7 @@ public class Obj {
 	 * Megadja az objektum leírását.
 	 */
 	public String getData() {
-		return this.getType() + " " + this.id;
+		return  this.id+" "+this.getType();
 	}
 
 	/**
