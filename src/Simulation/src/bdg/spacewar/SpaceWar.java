@@ -54,7 +54,7 @@ public class SpaceWar extends Thread {
 		this.objs.add(new Obj.ObjMoving.ObjShip(1000, 0, 0, 0, 0));
 		this.idShip2 = this.objs.get(1).id;
 		//System.out.println("id2: "+this.idShip2);
-		this.objs.add(new Obj.ObjPlanet(0, 0, 100));
+		this.objs.add(new Obj.ObjPlanet(0, 0, 10000));
 		this.status = Constants.STATUS_START;
 		try {
 			this.pw = new PrintWriter("be.txt");

@@ -19,7 +19,7 @@ public class GUI {
     static GameStatus GS;
     static Scanner sc;
     static Timer T;
-    static final int timerStep = 500;
+    static final int timerStep = 33;
     static String S;
     
    static {
