@@ -1,0 +1,60 @@
+============================================
+Javás kommunikációs modul a bdg.spacewar-hoz
+============================================
+
+Egy új játékosprogram elkészítéséhez egy jar-t kell csinálni, amit a kommunikációs modul betölt, és egy megfelelő osztályának
+függvényeit hívogatja. Készítettem egy példa projektet, ami semmi érdemlegeset nem csinál, de mutatja, hogy hogyan kell egy
+ilyen játékosprogramot definiálni. A példaprogram lefuttatásához szükség van a három JAR-ra: a kommunikációs moduléra és a két
+játékosprogram JAR-jára. Ebben a példában legyen a két játékosprogram ugyanaz, ezért elég lesz most két JAR. A kommunikációs
+modulé a .\bdg.spacewar\dist\bdg.spacewar.jar mappában található, a játékosprogramé a .\bdg.spacewar_exampleClient\dist\ mappában.
+Az egyszerűség kedvéért tegyük ezeket egy mappába. Nyissunk innen parancssori ablakot, ahol az alábbi utasítást lefuttatva
+láthatjuk a visszajelzést:
+
+java -jar bdg.spacewar.jar bdg.spacewar_exampleClient.jar bdg.spacewar_exampleClient.jar
+
+Ekkor valami ilyesmit látunk eredményül:
+
+I have been instantiated!
+Configuration method was called Here will be the configuration of the game.
+I have been instantiated!
+Configuration method was called Here will be the configuration of the game.
+Round method was called Here will be a status csv
+Round method was called Here will be a status csv
+Round method was called Here will be a status csv
+Round method was called Here will be a status csv
+Round method was called Here will be a status csv
+...
+
+Mivel most mindkét játékos ugyanaz volt, minden üzenetet duplán látunk. Az 'I have been instantiated' üzenet a játékosprogram
+konstruktorának meghívására utal. A 'Configuration method was called here' a configuration() metódus meghívásakor keletkezett,
+aminek a paramétere a 'Here will be the configuration of the game.' volt. Ahogy a szöveg is mutatja, később itt valóban a
+konfigurációs információt fogja továbbadni a szimulátor modul. A 'Round method was called' és a 'Here will be a status csv'
+szerintem az előző alapján megfejthető.
+
+
+
+-----------------------------------------------
+Egy új játékosprogram elkészítése NetBeans-zel:
+-----------------------------------------------
+ - Új projekt létrehozása (main class nélkül)
+ - Jobb klikk az új projekten > Properties > Libraries > Add JAR/Folder > ki kell választani a kommunikációs modul JAR fájlját.
+   Ez azért szükséges, mert ebben van a bdg.spacewar.SpacewarPlayer interfész definíciója.
+ - Ezután készíteni kell egy új package-et és osztályt, szigorúan bdg.spacewar.player.Player néven. Ez az osztály implementálja
+   a bdg.spacewar.SpacewarPlayer interfészt. Konstruktort nem kötelező definiálni, de ha mégis, paraméter nélküli legyen!
+ - Ezután implementálni kell az interfész megfelelő metódusait. Ezt legegyszerűbben úgy tehetjük meg, ha Player osztály forrásában
+   a pirossal aláhúzott Player szóra rányomunk, Alt-Enter, Implement all abstract methods.
+ - A configuration(String) metódust egyszer hívja meg a kommunikációs modul, a játék elején, átadva az aktuális játékra jellemző
+   beállításokat (pálya mérete, bolygók, ...)
+ - A round(String) metódust folyamatosan hívogatja a program, amíg véget nem ér a játék. A String paraméter itt az előző állapot
+   leírása, visszatérési értékként a játékos reakcióját kell átadni.
+
+
+-------------------------------   
+Egy játékosprogram lefuttatása:
+-------------------------------
+ - Ehhez parancssorból kell meghívni a szimulátor programot, mivel parancssori argumentumként kell átadni a programnak a két
+   versenyző program elérési útvonalát. Ha az elérési út tartalmaz szóközt, idézőjelben kell megadni.
+   Például:
+      java -jar bdg.spacewar.jar "D:\projektek\2014\bdg.spacewar\playerProgram1.jar" "..\playerProgram2.jar"
+ - Netbeansből is meghívható a kommunikációs modul parancssori argumentumokkal. Ehhez a Project Properties ablakban a Run fülnél
+   az Arguments mezőt kell átírni.
