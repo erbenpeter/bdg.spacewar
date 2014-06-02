@@ -14,7 +14,7 @@ public class GUI {
     private static JPanel contentPane;
     private static AnimationPanel animation;
     static final int SIZE = 600;
-    static int XMIN = 0, XMAX = 1000, YMIN = 0, YMAX = 1000;
+    static World W;
     static GameStatus GS_ = null;
     static GameStatus GS;
     static Scanner sc;
@@ -22,12 +22,14 @@ public class GUI {
     static final int timerStep = 33;
     static String S;
     
-   static {
+    static {
         try {
             sc = new Scanner(new FileReader("be.txt"));
         } catch (FileNotFoundException ex) {
             System.err.println("Hajaj! Baj van! A fájl elbújt.");
         }
+        double tmp[] = {0,0,0,0,100,100};
+        W = new World(-1, tmp);
    }
     
     private static void createAndShowGUI() {
@@ -63,7 +65,10 @@ public class GUI {
         public void actionPerformed(ActionEvent e) {
             // új helyzetek létrehozása
             if (sc.hasNextLine()) S = sc.nextLine();
-            if (GS_ == null) GS_ = new GameStatus(S);
+            if (GS_ == null) {
+                GS_ = new GameStatus(S);
+                for (SpaceObject so : GS_.obj) if (so instanceof World) W = (World) so;
+            }
             GS = new GameStatus(S);
             // újrarajzolás
             animation.paintImmediately(0, 0, animation.getWidth(), animation.getHeight());
@@ -97,11 +102,8 @@ class AnimationPanel extends JPanel {
         super.paintComponent(g);
         
         Draw D = new Draw((Graphics2D) g, GUI.SIZE, GUI.SIZE);
-        D.setScale(GUI.XMIN, GUI.XMAX, GUI.YMIN, GUI.YMAX);
-        if (GUI.GS != null) GUI.GS.draw(D);
-        if (GUI.GS_ != null) GUI.GS_.drawMap(D);
-        
-        //BufferedImage img = GUI.readImage("test.png");
-        //D.drawRotatedImage(img, 0, 0, 50, 1.57);
+        D.setScale(GUI.W.XMIN, GUI.W.XMAX, GUI.W.YMIN, GUI.W.YMAX);
+        if (GUI.GS != null) GUI.GS.draw(D, GUI.W);
+        if (GUI.GS_ != null) GUI.GS_.drawMap(D, GUI.W);
     }
 }

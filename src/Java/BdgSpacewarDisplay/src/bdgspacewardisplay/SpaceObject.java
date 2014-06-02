@@ -3,7 +3,7 @@ package bdgspacewardisplay;
 import java.awt.Color;
 
 abstract class SpaceObject {
-    abstract void draw(Draw D);
+    abstract void draw(Draw D, World W);
 }
 
 class Spaceship extends SpaceObject {
@@ -19,9 +19,9 @@ class Spaceship extends SpaceObject {
     }
     
     @Override
-    public void draw(Draw D) {
+    public void draw(Draw D, World W) {
         D.setPenColor(Color.BLUE);
-        D.filledCircle(x, y, 50);
+        D.filledCircle(x, y, W.r_spaceship);
         D.setPenColor();
     }
 }
@@ -37,9 +37,9 @@ class Bullet extends SpaceObject {
     }
     
     @Override
-    public void draw(Draw D) {
+    public void draw(Draw D, World W) {
         D.setPenColor(Color.BLACK);
-        D.filledCircle(x, y, 5);
+        D.filledCircle(x, y, W.r_bullet);
         D.setPenColor();
     }
 }
@@ -54,7 +54,7 @@ class Explosion extends SpaceObject {
     }
     
     @Override
-    public void draw(Draw D) {
+    public void draw(Draw D, World W) {
         D.setPenColor(Color.RED);
         D.filledCircle(x, y, 55);
         D.setPenColor();
@@ -72,7 +72,7 @@ class Planet extends SpaceObject {
     }
     
     @Override
-    public void draw(Draw D) {
+    public void draw(Draw D, World W) {
         D.setPenColor(Color.ORANGE);
         D.filledCircle(x, y, r);
         D.setPenColor();
@@ -80,17 +80,19 @@ class Planet extends SpaceObject {
 }
 
 class World extends SpaceObject {
-    int id; double bax, bay, jfx, jfy;
+    int id; double XMIN, YMIN, XMAX, YMAX; double r_spaceship, r_bullet;
     World(int id, double params[]) {
         this.id = id;
-        this.bax = params[0];
-        this.bay = params[1];
-        this.jfx = params[2];
-        this.jfy = params[3];
+        this.XMIN = params[0];
+        this.YMIN = params[1];
+        this.XMAX = params[2];
+        this.YMAX = params[3];
+        this.r_spaceship = params[4];
+        this.r_bullet = params[5];
     }
     
     @Override
-    public void draw(Draw D) {
+    public void draw(Draw D, World W) {
         
     }
 }

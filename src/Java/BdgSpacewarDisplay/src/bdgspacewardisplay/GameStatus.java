@@ -39,15 +39,15 @@ class GameStatus {
         sc.close();
     }
     
-    void draw(Draw D) {
+    void draw(Draw D, World W) {
         for (SpaceObject so : obj) {
-            so.draw(D);
+            so.draw(D, W);
         }
     }
     
-    void drawMap(Draw D) {
+    void drawMap(Draw D, World W) {
         for (SpaceObject so : obj) {
-            if (so instanceof Planet || so instanceof World) so.draw(D);
+            if (so instanceof Planet || so instanceof World) so.draw(D, W);
         }
     }
 }
