@@ -1,116 +1,150 @@
 package bdg.spacewar;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.ArrayList;
+import bdg.spacewar.Obj.ObjMoving.*;
 
-public class SpaceWar extends Thread {
-	public List<Obj> objs;
-	public int idShip1, idShip2;
-	public int status;
-	public long time;
-	public PrintWriter pw;
-	public Process p1, p2;
+public class SpaceWar {
+	public static List<Obj> objs;
+	public static int idShip1, idShip2;
+	public static int status;
+	public static long time;
+	public static final double minX = -500D, minY = -500D, maxX = 500D,
+			maxY = 500D;
+	public static PrintWriter pw;
+	public static Process p1, p2;
 
-	public String getStatus() {
+	public static String getStatus() {
 		int n = 0;
-		for (int i = 0; i < this.objs.size(); i++)
-			if (this.status == Constants.STATUS_START
-					|| this.objs.get(i).getType() != Constants.TYPE_PLANET) {
+		for (int i = 0; i < objs.size(); i++)
+			if (status == Constants.STATUS_START
+					|| objs.get(i).getType() != Constants.TYPE_PLANET) {
 				n++;
 			}
-		if (this.status == Constants.STATUS_START)
+		if (status == Constants.STATUS_START)
 			n++;
 		StringBuilder sb = new StringBuilder("");
-		sb.append(this.time);
+		sb.append(time);
 		sb.append(' ');
-		sb.append(this.status);
+		sb.append(status);
 		sb.append(' ');
 		sb.append(n);
-		if (this.status == Constants.STATUS_START)
-			sb.append(' ').append(Constants.TYPE_MAP).append(' ')
-					.append(UUID.reserve()).append(" 6 ")
-					.append("-3000 -3000 3000 3000 ").append(Constants.R_SHIP)
-					.append(' ').append(Constants.R_BULLET);
-		for (int i = 0; i < this.objs.size(); i++)
-			if (this.status == Constants.STATUS_START
-					|| this.objs.get(i).getType() != Constants.TYPE_PLANET) {
+		if (status == Constants.STATUS_START)
+			sb.append(' ').append(UUID.reserve()).append(' ')
+					.append(Constants.TYPE_MAP).append(" 6 ").append(minX)
+					.append(' ').append(minY).append(' ').append(maxX)
+					.append(' ').append(maxY).append(' ')
+					.append(Constants.R_SHIP).append(' ')
+					.append(Constants.R_BULLET);
+		for (int i = 0; i < objs.size(); i++)
+			if (status == Constants.STATUS_START
+					|| objs.get(i).getType() != Constants.TYPE_PLANET) {
 				sb.append(' ');
-				sb.append(this.objs.get(i).getData());
+				sb.append(objs.get(i).getData());
 			}
 		return sb.toString();
 	}
 
-	public SpaceWar(String[] args) {
-
-	}
-
-	public void init() {
-		this.objs = new ArrayList<Obj>();
-		this.objs.add(new Obj.ObjMoving.ObjShip(-1000, 0, 0, 0, Math.PI));
-		this.idShip1 = this.objs.get(0).id;
-		//System.out.println("id1: "+this.idShip1);
-		this.objs.add(new Obj.ObjMoving.ObjShip(1000, 0, 0, 0, 0));
-		this.idShip2 = this.objs.get(1).id;
-		//System.out.println("id2: "+this.idShip2);
-		this.objs.add(new Obj.ObjPlanet(0, 0, 10000));
-		this.status = Constants.STATUS_START;
+	public static void init() {
+		objs = new ArrayList<Obj>();
+		objs.add(new Obj.ObjMoving.ObjShip(-1000, 0, 0, 0, Math.PI));
+		idShip1 = objs.get(0).id;
+		// System.out.println("id1: "+idShip1);
+		objs.add(new Obj.ObjMoving.ObjShip(1000, 0, 0, 0, 0));
+		idShip2 = objs.get(1).id;
+		// System.out.println("id2: "+idShip2);
+		objs.add(new Obj.ObjPlanet(0, 0, 10000));
+		status = Constants.STATUS_START;
 		try {
-			this.pw = new PrintWriter("be.txt");
+			pw = new PrintWriter("be.txt");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		this.pw.println(this.getStatus());
-		this.status = Constants.STATUS_RUN;
+		pw.println(getStatus());
+		status = Constants.STATUS_RUN;
+	}
+	
+	public static String BenceGetConfiguration() {
+		init();
+		return getStatus();
 	}
 
-	public void tick() {
-		for (int i = 0; i < this.objs.size(); i++) {
-			if (this.objs.get(i).id == this.idShip1) {
-				// TODO
-			} else if (this.objs.get(i).id == this.idShip2) {
-				// TODO
+	public static String BenceUpdate(String s1, String s2) {
+		for (int i = 0; i < objs.size(); i++) {
+			if (objs.get(i).id == idShip1) {
+				ObjShip ship = (ObjShip)objs.get(i);
+				ship.dacc = Double.parseDouble(s1.split(" ")[0]);
+				ship.ddeg = Double.parseDouble(s1.split(" ")[1]);
+				ship.shot = Boolean.parseBoolean(s1.split(" ")[2]);
+			} else if (objs.get(i).id == idShip2) {
+				ObjShip ship = (ObjShip)objs.get(i);
+				ship.dacc = Double.parseDouble(s2.split(" ")[0]);
+				ship.ddeg = Double.parseDouble(s2.split(" ")[1]);
+				ship.shot = Boolean.parseBoolean(s2.split(" ")[2]);
 			}
-			this.objs.get(i).update(this.objs);
+			objs.get(i).update();
 		}
-		for (int i = 0; i < this.objs.size(); i++)
-			if (this.objs.get(i).shouldRemove) {
-				if (this.objs.get(i).id == this.idShip1) {
-					if (this.status == Constants.STATUS_WIN1)
-						this.status = Constants.STATUS_DRAW;
+		tick();
+		return getStatus();
+	}
+	
+	public static void BenceEnd() {
+		end();
+	}
+
+	public static void tick() {
+		time++;
+		for (int i = 0; i < objs.size(); i++) {
+			if (objs.get(i).id == idShip1 && p1 != null) {
+				
+			} else if (objs.get(i).id == idShip2 && p2 != null) {
+				
+			}
+			objs.get(i).update();
+		}
+		for (int i = 0; i < objs.size(); i++)
+			if (objs.get(i).shouldRemove) {
+				if (objs.get(i).id == idShip1) {
+					if (status == Constants.STATUS_WIN1)
+						status = Constants.STATUS_DRAW;
 					else
-						this.status = Constants.STATUS_WIN2;
-				} else if (this.objs.get(i).id == this.idShip2) {
-					if (this.status == Constants.STATUS_WIN2)
-						this.status = Constants.STATUS_DRAW;
+						status = Constants.STATUS_WIN2;
+				} else if (objs.get(i).id == idShip2) {
+					if (status == Constants.STATUS_WIN2)
+						status = Constants.STATUS_DRAW;
 					else
-						this.status = Constants.STATUS_WIN1;
+						status = Constants.STATUS_WIN1;
 				}
-				//System.out.println(this.time+" "+this.objs.get(i).id);
-				this.objs.get(i).destroy();
-				this.objs.remove(i--);
+				// System.out.println(time+" "+objs.get(i).id);
+				objs.get(i).destroy();
+				objs.remove(i--);
 			}
+		pw.println(getStatus());
 	}
 
-	public void end() {
-		//this.pw.println(this.getStatus());
-		this.pw.close();
+	public static void end() {
+		// pw.println(getStatus());
+		pw.close();
 	}
 
-	@Override
-	public void run() {
+	public static void main(String[] args) throws IOException {
 		System.out.println("Starting simulation...");
-		this.init();
-		for (this.time = 1; this.status == Constants.STATUS_RUN; this.time++) {
-			tick();
-			this.pw.println(this.getStatus());
+		if(args.length == 2) {
+			p1 = Runtime.getRuntime().exec(args[0]);
+			p2 = Runtime.getRuntime().exec(args[1]);
 		}
-		this.end();
+		init();
+		while(status == Constants.STATUS_RUN) {
+			tick();
+		}
+		if(p1 != null)
+			p1.destroy();
+		if(p2 != null)
+			p2.destroy();
+		end();
 		System.out.println("Simulation done!");
-	}
-
-	public static void main(String[] args) {
-		new SpaceWar(args).start();
 	}
 }

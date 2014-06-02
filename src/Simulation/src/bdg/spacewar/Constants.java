@@ -17,4 +17,7 @@ public class Constants {
 	public static final double R_SHIP = 10D;
 	public static final double R_BULLET = 1D;
 	public static final double R_PLANET = 100D;
+	
+	public static final double A_SHIP = 0.5D;
+	public static final double V_BULLET = 10D;
 }

@@ -1,7 +1,5 @@
 package bdg.spacewar;
 
-import java.util.List;
-
 public class Obj {
 	/** Az objektum egyéni azonosítója. */
 	public int id;
@@ -42,11 +40,8 @@ public class Obj {
 
 	/**
 	 * Frissíti az objektumot.
-	 * 
-	 * @param objs
-	 *            az összes létezõ objektum
 	 */
-	public void update(List<Obj> objs) {
+	public void update() {
 
 	}
 
@@ -91,29 +86,29 @@ public class Obj {
 		}
 
 		@Override
-		public void update(List<Obj> objs) {
+		public void update() {
 			double gx = 0D, gy = 0D;
-			for (int i = 0; i < objs.size(); i++)
-				if (objs.get(i).id != this.id) {
-					if (objs.get(i).hasMass() && objs.get(i).hasCoords()) {
-						double r2 = (objs.get(i).getX() - this.x)
-								* (objs.get(i).getX() - this.x)
-								+ (objs.get(i).getY() - this.y)
-								* (objs.get(i).getY() - this.y);
-						double ratio = objs.get(i).getMass() / r2
+			for (int i = 0; i < SpaceWar.objs.size(); i++)
+				if (SpaceWar.objs.get(i).id != this.id) {
+					if (SpaceWar.objs.get(i).hasMass() && SpaceWar.objs.get(i).hasCoords()) {
+						double r2 = (SpaceWar.objs.get(i).getX() - this.x)
+								* (SpaceWar.objs.get(i).getX() - this.x)
+								+ (SpaceWar.objs.get(i).getY() - this.y)
+								* (SpaceWar.objs.get(i).getY() - this.y);
+						double ratio = SpaceWar.objs.get(i).getMass() / r2
 								/ Math.sqrt(r2);
-						gx += (objs.get(i).getX() - this.x) * ratio;
-						gy += (objs.get(i).getY() - this.y) * ratio;
+						gx += (SpaceWar.objs.get(i).getX() - this.x) * ratio;
+						gy += (SpaceWar.objs.get(i).getY() - this.y) * ratio;
 					}
 					if (!this.shouldRemove
-							&& (objs.get(i).hasCoords() && objs.get(i)
+							&& (SpaceWar.objs.get(i).hasCoords() && SpaceWar.objs.get(i)
 									.getRadius()
-									* objs.get(i).getRadius()
-									+ this.getRadius() * this.getRadius() >= (objs
+									* SpaceWar.objs.get(i).getRadius()
+									+ this.getRadius() * this.getRadius() >= (SpaceWar.objs
 									.get(i).getX() - this.x)
-									* (objs.get(i).getX() - this.x)
-									+ (objs.get(i).getY() - this.y)
-									* (objs.get(i).getY() - this.y))) {
+									* (SpaceWar.objs.get(i).getX() - this.x)
+									+ (SpaceWar.objs.get(i).getY() - this.y)
+									* (SpaceWar.objs.get(i).getY() - this.y))) {
 						this.shouldRemove = true;
 					}
 				}
@@ -144,7 +139,7 @@ public class Obj {
 			}
 
 			@Override
-			public void update(List<Obj> objs) {
+			public void update() {
 				this.deg += this.ddeg;
 				while (this.deg < 0D)
 					this.deg += 2 * Math.PI;
@@ -152,8 +147,12 @@ public class Obj {
 					this.deg -= 2 * Math.PI;
 				this.vx += Math.cos(this.deg) * this.dacc;
 				this.vy += Math.sin(this.deg) * this.dacc;
-				super.update(objs);
-				// TODO shot
+				super.update();
+				if(this.shot){
+					SpaceWar.objs.add(new Obj.ObjMoving.ObjBullet(this.x+Math.cos(this.deg), this.y+Math.sin(this.deg), Math.cos(this.deg)*Constants.V_BULLET, Math.sin(this.deg)*Constants.V_BULLET));
+				}
+				if(this.x < SpaceWar.minX || this.x > SpaceWar.maxX || this.y < SpaceWar.minY || this.y > SpaceWar.maxY)
+					this.shouldRemove = true;
 			}
 
 			@Override
