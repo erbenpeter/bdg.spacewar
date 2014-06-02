@@ -103,6 +103,7 @@ class AnimationPanel extends JPanel {
         
         Draw D = new Draw((Graphics2D) g, GUI.SIZE, GUI.SIZE);
         D.setScale(GUI.W.XMIN, GUI.W.XMAX, GUI.W.YMIN, GUI.W.YMAX);
+        D.setScale(-1000, 1000, -1000, 1000);
         if (GUI.GS != null) GUI.GS.draw(D, GUI.W);
         if (GUI.GS_ != null) GUI.GS_.drawMap(D, GUI.W);
     }

@@ -7,6 +7,7 @@ import java.awt.Image;
 import java.awt.geom.*;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
+import static java.lang.Math.*;
 
 /**
  * Graphics2D-ben a rajzolást megkönnyítő osztály.
@@ -167,5 +168,27 @@ public class Draw {
 
     private void pixel(double x, double y) {
         G.fillRect((int) Math.round(scaleX(x)), (int) Math.round(scaleY(y)), 1, 1);
+    }
+    
+    void triangle(double x, double y, double R, double phi) {
+        double[] x_ = new double[3];
+        double[] y_ = new double[3];
+        
+        x_[0] = x + R * cos(phi);
+        x_[1] = x + R * cos(phi + PI*2/3);
+        x_[2] = x + R * cos(phi + PI*4/3);
+        
+        y_[0] = y + R * sin(phi);
+        y_[1] = y + R * sin(phi + PI*2/3);
+        y_[2] = y + R * sin(phi + PI*4/3);
+        
+        polygon(x_, y_);
+    }
+    
+    void polygon(double x[], double y[]) {
+        if (x.length != y.length) throw new RuntimeException("Csúnya bácsi rossz tömböket adott.");
+        for (int i = 0; i < x.length; i++) {
+            line(x[i], y[i], x[(i+1)%x.length], y[(i+1)%x.length]);
+        }
     }
 }
