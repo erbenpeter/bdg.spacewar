@@ -21,7 +21,8 @@ class Spaceship extends SpaceObject {
     @Override
     public void draw(Draw D, World W) {
         D.setPenColor(Color.BLUE);
-        D.filledCircle(x, y, W.r_spaceship);
+        //D.filledCircle(x, y, W.r_spaceship);
+        D.triangle(x,y,W.r_spaceship,f);
         D.setPenColor();
     }
 }
