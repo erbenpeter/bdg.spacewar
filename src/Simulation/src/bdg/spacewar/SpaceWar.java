@@ -213,7 +213,7 @@ public class SpaceWar {
 	}
 
 	public static void main(String[] args) throws IOException {
-		args = new String[] { "prg1", "prg1" };
+		args = new String[] { "prg1", "java -jar Test.jar" };
 		init(args);
 		while (status == Constants.STATUS_RUN) {
 			tick();

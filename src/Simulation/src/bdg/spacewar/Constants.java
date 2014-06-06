@@ -14,7 +14,7 @@ public class Constants {
 	public static final int TYPE_PLANET = 3;
 	public static final int TYPE_MAP = 4;
 
-	public static final double R_SHIP = 10D;
+	public static final double R_SHIP = 50D;
 	public static final double R_BULLET = 1D;
 	public static final double R_PLANET = 100D;
 	
