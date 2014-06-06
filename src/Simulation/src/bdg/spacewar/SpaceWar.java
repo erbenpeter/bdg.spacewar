@@ -121,6 +121,7 @@ public class SpaceWar {
 	}
 
 	static void init(String[] args) {
+		System.out.println("Starting simulation...");
 		objs = new ArrayList<Obj>();
 		if (args != null && args.length > 0) {
 			players = new Player[args.length];
@@ -207,17 +208,16 @@ public class SpaceWar {
 				if (players[i] != null)
 					players[i].destroy();
 		pw.close();
+		System.out.println("Simulation done!");
 	}
 
 	public static void main(String[] args) throws IOException {
-		System.out.println("Starting simulation...");
 		args = new String[] { "proba", "prg2" };
 		init(args);
 		while (status == Constants.STATUS_RUN) {
 			tick();
 		}
 		end();
-		System.out.println("Simulation done!");
 	}
 
 	static String BenceGetConfiguration() {
@@ -229,9 +229,11 @@ public class SpaceWar {
 		int x = 0;
 		for (int i = 0; i < objs.size(); i++) {
 			if (objs.get(i) instanceof ObjShip) {
+				//System.out.println("input: "+input[x]);
 				ObjShip ship = (ObjShip) objs.get(i);
 				ship.ddeg = Double.parseDouble(input[x].split(" ")[0])
 						* Constants.W_SHIP;
+				//System.out.println(((ObjShip)objs.get(i)).ddeg);
 				ship.dacc = Double.parseDouble(input[x].split(" ")[1])
 						* Constants.A_SHIP;
 				ship.shot = Boolean.parseBoolean(input[x].split(" ")[2]);

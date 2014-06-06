@@ -10,6 +10,6 @@ public class Player implements SpaceWarPlayer {
 	
 	@Override
 	public String round(String csv) {
-		return "0 0 0";
+		return "1 0 false";
 	}
 }
