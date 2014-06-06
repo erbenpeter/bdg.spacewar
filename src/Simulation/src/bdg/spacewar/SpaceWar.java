@@ -108,15 +108,16 @@ public class SpaceWar {
 		String str = new StringBuilder(getStatus()).append('\n').toString();
 		if (players != null)
 			for (int i = 0; i < players.length; i++)
-				try {
-					players[i].out.flush();
-					players[i].out.write(str.getBytes());
-					players[i].out.flush();
-					players[i].lastCommTime = System.currentTimeMillis();
-				} catch (IOException e) {
-					System.err.println("Couldn't send data to program 1!");
-					status = Constants.STATUS_ERROR;
-				}
+				if(players[i] != null)
+					try {
+						players[i].out.flush();
+						players[i].out.write(str.getBytes());
+						players[i].out.flush();
+						players[i].lastCommTime = System.currentTimeMillis();
+					} catch (IOException e) {
+						System.err.println("Couldn't send data to program 1!");
+						status = Constants.STATUS_ERROR;
+					}
 		pw.print(str);
 	}
 
@@ -212,7 +213,7 @@ public class SpaceWar {
 	}
 
 	public static void main(String[] args) throws IOException {
-		args = new String[] { "proba", "prg2" };
+		args = new String[] { "prg1", "prg1" };
 		init(args);
 		while (status == Constants.STATUS_RUN) {
 			tick();
