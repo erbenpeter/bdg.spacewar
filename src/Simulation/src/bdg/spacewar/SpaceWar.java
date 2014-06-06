@@ -2,6 +2,8 @@ package bdg.spacewar;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.ArrayList;
@@ -9,18 +11,65 @@ import java.util.ArrayList;
 import bdg.spacewar.Obj.ObjMoving.*;
 
 public class SpaceWar {
-	public static List<Obj> objs;
-	public static int idShip1, idShip2;
-	public static int status;
-	public static long time;
-	public static final double minX = -500D, minY = -500D, maxX = 500D,
-			maxY = 500D;
-	public static PrintWriter pw;
-	public static Process p1 = null, p2 = null;
-	public static long commTime1, commTime2;
-	public static final long maxWaitTime = 500;
+	static class Player {
+		int shipID, id;
+		long lastCommTime, lastShotTime;
+		Process p;
+		InputStream in;
+		OutputStream out;
 
-	public static String getStatus() {
+		public Player(String str, int shipID, int id) {
+			try {
+				this.p = Runtime.getRuntime().exec(str);
+				this.in = p.getInputStream();
+				this.out = p.getOutputStream();
+			} catch (IOException e) {
+				System.err.println("Error loading player!");
+				status = Constants.STATUS_ERROR;
+			}
+		}
+
+		public String getReply() throws IOException {
+			String msg = "";
+			char c = ' ';
+			while (c != '\n') {
+				if (System.currentTimeMillis() - this.lastCommTime > maxWaitTime) {
+					System.err.println("Player " + this.id + " timed out!");
+					status = Constants.STATUS_ERROR;
+					return null;
+				}
+				if (this.in.available() > 0) {
+					c = (char) this.in.read();
+					msg += c;
+				}
+			}
+			return msg.substring(0, msg.length() - 1);
+		}
+
+		public void destroy() {
+			try {
+				this.in.close();
+				this.out.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			this.p.destroy();
+		}
+	}
+
+	static List<Obj> objs;
+	static int status;
+	static long time;
+	static PrintWriter pw;
+	static Player[] players;
+	static int playerCount;
+
+	// Temporal values
+	static final long maxWaitTime = 500;
+	static final double minX = -1000D, minY = -1000D, maxX = 1000D,
+			maxY = 1000D;
+
+	static String getStatus() {
 		int n = 0;
 		for (int i = 0; i < objs.size(); i++)
 			if (status == Constants.STATUS_START
@@ -37,11 +86,15 @@ public class SpaceWar {
 		sb.append(n);
 		if (status == Constants.STATUS_START)
 			sb.append(' ').append(UUID.reserve()).append(' ')
-					.append(Constants.TYPE_MAP).append(" 6 ").append(minX)
+					.append(Constants.TYPE_MAP).append(" 10 ").append(minX)
 					.append(' ').append(minY).append(' ').append(maxX)
 					.append(' ').append(maxY).append(' ')
 					.append(Constants.R_SHIP).append(' ')
-					.append(Constants.R_BULLET);
+					.append(Constants.A_SHIP).append(' ')
+					.append(Constants.W_SHIP).append(' ')
+					.append(Constants.R_BULLET).append(' ')
+					.append(Constants.V_BULLET).append(' ')
+					.append(Constants.T_BULLET);
 		for (int i = 0; i < objs.size(); i++)
 			if (status == Constants.STATUS_START
 					|| objs.get(i).getType() != Constants.TYPE_PLANET) {
@@ -50,40 +103,46 @@ public class SpaceWar {
 			}
 		return sb.toString();
 	}
-	
-	public static void writeData() {
+
+	static void writeData() {
 		String str = new StringBuilder(getStatus()).append('\n').toString();
-		if (p1 != null) {
-			try {
-				p1.getOutputStream().write(str.getBytes());
-				//p1.getOutputStream().flush();
-				commTime1 = System.currentTimeMillis();
-			} catch (IOException e) {
-				System.err.println("Couldn't send data to program 1!");
-				status = Constants.STATUS_ERROR;
-			}
-		}
-		if (p2 != null) {
-			try {
-				p2.getOutputStream().write(str.getBytes());
-				//p2.getOutputStream().flush();
-				commTime2 = System.currentTimeMillis();
-			} catch (IOException e) {
-				System.err.println("Couldn't send data to program 2!");
-				status = Constants.STATUS_ERROR;
-			}
-		}
+		if (players != null)
+			for (int i = 0; i < players.length; i++)
+				try {
+					players[i].out.flush();
+					players[i].out.write(str.getBytes());
+					players[i].out.flush();
+					players[i].lastCommTime = System.currentTimeMillis();
+				} catch (IOException e) {
+					System.err.println("Couldn't send data to program 1!");
+					status = Constants.STATUS_ERROR;
+				}
 		pw.print(str);
 	}
 
-	public static void init() {
+	static void init(String[] args) {
 		objs = new ArrayList<Obj>();
-		objs.add(new Obj.ObjMoving.ObjShip(-300, 0, 0, 0, Math.PI));
-		idShip1 = objs.get(0).id;
-		// System.out.println("id1: "+idShip1);
-		objs.add(new Obj.ObjMoving.ObjShip(300, 0, 0, 0, 0));
-		idShip2 = objs.get(1).id;
-		// System.out.println("id2: "+idShip2);
+		if (args != null && args.length > 0) {
+			players = new Player[args.length];
+			playerCount = args.length;
+			for (int i = 0; i < args.length; i++) {
+				double deg = Math.PI * 2D * i / args.length;
+				ObjShip ship = new ObjShip(Math.cos(deg) * Constants.R_PLANET
+						* 5, Math.sin(deg) * Constants.R_PLANET * 5, 0D, 0D,
+						deg);
+				ship.player = i;
+				objs.add(ship);
+				players[i] = new Player(args[i], ship.id, i);
+			}
+		} else if (playerCount > 0)
+			for (int i = 0; i < playerCount; i++) {
+				double deg = Math.PI * 2D * i / playerCount;
+				ObjShip ship = new ObjShip(Math.cos(deg) * Constants.R_PLANET
+						* 5, Math.sin(deg) * Constants.R_PLANET * 5, 0D, 0D,
+						deg);
+				ship.player = i;
+				objs.add(ship);
+			}
 		objs.add(new Obj.ObjPlanet(0, 0, 10000));
 		status = Constants.STATUS_START;
 		try {
@@ -95,119 +154,94 @@ public class SpaceWar {
 		status = Constants.STATUS_RUN;
 	}
 
-	public static void tick() {
+	static void tick() {
 		System.out.println(time++);
 		for (int i = 0; i < objs.size(); i++) {
-			if (objs.get(i).id == idShip1 && p1 != null) {
+			if (objs.get(i) instanceof ObjShip && players != null) {
+				ObjShip ship = (ObjShip) objs.get(i);
+				String msg = null;
 				try {
-					String s = "";
-					char c = ' ';
-					while (c != '\n' && status != Constants.STATUS_ERROR) {
-						if (System.currentTimeMillis() - commTime1 > maxWaitTime)
-							status = Constants.STATUS_ERROR;
-						if (p1.getInputStream().available() > 0) {
-							c = (char) p1.getInputStream().read();
-							s += c;
-						}
-					}
-					System.out.println("p1: " + s);
-					if (status != Constants.STATUS_ERROR) {
-						s = s.substring(0, s.length() - 1);
-						ObjShip ship = (ObjShip) objs.get(i);
-						ship.dacc = Double.parseDouble(s.split(" ")[0]);
-						ship.ddeg = Double.parseDouble(s.split(" ")[1]);
-						ship.shot = Boolean.parseBoolean(s.split(" ")[2]);
-					}
+					msg = players[ship.player].getReply();
 				} catch (IOException e) {
-					System.err.println("Program 1 didn't reply!");
+					System.err.println("Error retrieving reply from player "
+							+ ship.player + "!");
+					status = Constants.STATUS_ERROR;
 				}
-			} else if (objs.get(i).id == idShip2 && p2 != null) {
-				try {
-					String s = "";
-					char c = ' ';
-					while (c != '\n' && status != Constants.STATUS_ERROR) {
-						if (System.currentTimeMillis() - commTime2 > maxWaitTime)
-							status = Constants.STATUS_ERROR;
-						if (p2.getInputStream().available() > 0) {
-							c = (char) p2.getInputStream().read();
-							s += c;
-						}
+				if (msg != null) {
+					ship.ddeg = Double.parseDouble(msg.split(" ")[0])
+							* Constants.W_SHIP;
+					ship.dacc = Double.parseDouble(msg.split(" ")[1])
+							* Constants.A_SHIP;
+					ship.shot = Boolean.parseBoolean(msg.split(" ")[2]);
+					if (ship.ddeg < -1 || ship.ddeg > 1 || ship.dacc < -1
+							|| ship.dacc > 1) {
+						System.err.println("Invalid input form player "
+								+ ship.player + "!");
+						status = Constants.STATUS_ERROR;
 					}
-					System.out.println("p2: " + s);
-					if (status != Constants.STATUS_ERROR) {
-						s = s.substring(0, s.length() - 1);
-						ObjShip ship = (ObjShip) objs.get(i);
-						ship.dacc = Double.parseDouble(s.split(" ")[0]);
-						ship.ddeg = Double.parseDouble(s.split(" ")[1]);
-						ship.shot = Boolean.parseBoolean(s.split(" ")[2]);
-					}
-				} catch (IOException e) {
-					System.err.println("Program 2 didn't reply!");
 				}
 			}
 			objs.get(i).update();
 		}
 		for (int i = 0; i < objs.size(); i++)
 			if (objs.get(i).shouldRemove) {
-				if (objs.get(i).id == idShip1) {
-					if (status == Constants.STATUS_WIN1)
+				if (objs.get(i) instanceof ObjShip) {
+					ObjShip ship = (ObjShip) objs.get(i);
+					if (players != null) {
+						players[ship.player].destroy();
+						players[ship.player] = null;
+					}
+					playerCount--;
+					if (playerCount <= 1)
 						status = Constants.STATUS_DRAW;
-					else
-						status = Constants.STATUS_WIN2;
-				} else if (objs.get(i).id == idShip2) {
-					if (status == Constants.STATUS_WIN2)
-						status = Constants.STATUS_DRAW;
-					else
-						status = Constants.STATUS_WIN1;
 				}
-				// System.out.println(time+" "+objs.get(i).id);
 				objs.get(i).destroy();
 				objs.remove(i--);
 			}
 		writeData();
 	}
 
-	public static void end() {
-		// pw.println(getStatus());
+	static void end() {
+		if (players != null)
+			for (int i = 0; i < players.length; i++)
+				if (players[i] != null)
+					players[i].destroy();
 		pw.close();
 	}
 
 	public static void main(String[] args) throws IOException {
 		System.out.println("Starting simulation...");
-		//args = new String[] { "proba", "prg2" };
-		if (args.length == 2) {
-			p1 = Runtime.getRuntime().exec(args[0]);
-			p2 = Runtime.getRuntime().exec(args[1]);
-		}
-		init();
+		args = new String[] { "proba", "prg2" };
+		init(args);
 		while (status == Constants.STATUS_RUN) {
 			tick();
 		}
-		if (p1 != null)
-			p1.destroy();
-		if (p2 != null)
-			p2.destroy();
 		end();
 		System.out.println("Simulation done!");
 	}
 
-	public static String BenceGetConfiguration() {
-		init();
+	static String BenceGetConfiguration() {
+		init(null);
 		return getStatus();
 	}
 
-	public static String BenceUpdate(String s1, String s2) {
+	static String BenceUpdate(String[] input) {
+		int x = 0;
 		for (int i = 0; i < objs.size(); i++) {
-			if (objs.get(i).id == idShip1) {
+			if (objs.get(i) instanceof ObjShip) {
 				ObjShip ship = (ObjShip) objs.get(i);
-				ship.dacc = Double.parseDouble(s1.split(" ")[0]);
-				ship.ddeg = Double.parseDouble(s1.split(" ")[1]);
-				ship.shot = Boolean.parseBoolean(s1.split(" ")[2]);
-			} else if (objs.get(i).id == idShip2) {
-				ObjShip ship = (ObjShip) objs.get(i);
-				ship.dacc = Double.parseDouble(s2.split(" ")[0]);
-				ship.ddeg = Double.parseDouble(s2.split(" ")[1]);
-				ship.shot = Boolean.parseBoolean(s2.split(" ")[2]);
+				ship.ddeg = Double.parseDouble(input[x].split(" ")[0])
+						* Constants.W_SHIP;
+				ship.dacc = Double.parseDouble(input[x].split(" ")[1])
+						* Constants.A_SHIP;
+				ship.shot = Boolean.parseBoolean(input[x].split(" ")[2]);
+				if (ship.ddeg < -1 || ship.ddeg > 1 || ship.dacc < -1
+						|| ship.dacc > 1) {
+					System.err.println("Invalid input form player "
+							+ ship.player + "!");
+					status = Constants.STATUS_ERROR;
+				}
+				x++;
 			}
 			objs.get(i).update();
 		}
@@ -215,7 +249,7 @@ public class SpaceWar {
 		return getStatus();
 	}
 
-	public static void BenceEnd() {
+	static void BenceEnd() {
 		end();
 	}
 }

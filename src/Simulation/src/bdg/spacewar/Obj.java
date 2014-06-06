@@ -122,6 +122,7 @@ public class Obj {
 			public double deg;
 			public double ddeg, dacc;
 			public boolean shot;
+			public int player;
 
 			public ObjShip(double x, double y, double vx, double vy, double deg) {
 				super(x, y, vx, vy);

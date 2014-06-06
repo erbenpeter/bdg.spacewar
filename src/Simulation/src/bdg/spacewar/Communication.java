@@ -23,10 +23,12 @@ public class Communication {
      * @param args The paths of the player JARs.
      */
     public static void main(String[] args) {
+    	args = new String[]{"player1.jar", "player1.jar"};
         if(args.length<NUMBER_OF_PLAYERS) {
             System.out.println("There must be at least "+NUMBER_OF_PLAYERS+" players");
             return;
         }
+        SpaceWar.playerCount = args.length;
         
         
         String config = SpaceWar.BenceGetConfiguration();
@@ -51,7 +53,7 @@ public class Communication {
             	}
             }
             first = false;
-            SpaceWar.BenceUpdate(playerAction[0], playerAction[1]);
+            SpaceWar.BenceUpdate(playerAction);
         } while(SpaceWar.status==Constants.STATUS_RUN);
         SpaceWar.BenceEnd();
     }
