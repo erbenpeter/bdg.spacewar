@@ -20,6 +20,6 @@ public class Constants {
 	
 	public static final double A_SHIP = 0.5D;
 	public static final double W_SHIP = Math.PI/16;
-	public static final double V_BULLET = 10D;
+	public static final double V_BULLET = 1D;
 	public static final int T_BULLET = 10;
 }

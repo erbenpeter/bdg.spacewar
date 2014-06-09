@@ -28,7 +28,7 @@ public class Communication {
             System.out.println("There must be at least "+NUMBER_OF_PLAYERS+" players");
             return;
         }
-        SpaceWar.playerCount = args.length;
+        SpaceWar.playerCount = NUMBER_OF_PLAYERS;
         
         
         String config = SpaceWar.BenceGetConfiguration();

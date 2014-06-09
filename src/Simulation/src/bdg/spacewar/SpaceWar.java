@@ -13,7 +13,7 @@ import bdg.spacewar.Obj.ObjMoving.*;
 public class SpaceWar {
 	static class Player {
 		int shipID, id;
-		long lastCommTime, lastShotTime;
+		long lastCommTime;
 		Process p;
 		InputStream in;
 		OutputStream out;
@@ -108,7 +108,7 @@ public class SpaceWar {
 		String str = new StringBuilder(getStatus()).append('\n').toString();
 		if (players != null)
 			for (int i = 0; i < players.length; i++)
-				if(players[i] != null)
+				if (players[i] != null)
 					try {
 						players[i].out.flush();
 						players[i].out.write(str.getBytes());
@@ -129,9 +129,8 @@ public class SpaceWar {
 			playerCount = args.length;
 			for (int i = 0; i < args.length; i++) {
 				double deg = Math.PI * 2D * i / args.length;
-				ObjShip ship = new ObjShip(Math.cos(deg) * Constants.R_PLANET
-						* 5, Math.sin(deg) * Constants.R_PLANET * 5, 0D, 0D,
-						deg);
+				ObjShip ship = new ObjShip(Math.cos(deg) * maxX / 2,
+						Math.sin(deg) * maxX / 2, 0D, 0D, deg);
 				ship.player = i;
 				objs.add(ship);
 				players[i] = new Player(args[i], ship.id, i);
@@ -139,9 +138,8 @@ public class SpaceWar {
 		} else if (playerCount > 0)
 			for (int i = 0; i < playerCount; i++) {
 				double deg = Math.PI * 2D * i / playerCount;
-				ObjShip ship = new ObjShip(Math.cos(deg) * Constants.R_PLANET
-						* 5, Math.sin(deg) * Constants.R_PLANET * 5, 0D, 0D,
-						deg);
+				ObjShip ship = new ObjShip(Math.cos(deg) * maxX / 2,
+						Math.sin(deg) * maxX / 2, 0D, 0D, deg);
 				ship.player = i;
 				objs.add(ship);
 			}
@@ -157,7 +155,7 @@ public class SpaceWar {
 	}
 
 	static void tick() {
-		System.out.println(time++);
+		System.out.println("time: " + (time++) + " objs: " + objs.size());
 		for (int i = 0; i < objs.size(); i++) {
 			if (objs.get(i) instanceof ObjShip && players != null) {
 				ObjShip ship = (ObjShip) objs.get(i);
@@ -199,7 +197,8 @@ public class SpaceWar {
 				}
 				objs.get(i).destroy();
 				objs.remove(i--);
-			}
+			} else
+				objs.get(i).postUpdate();
 		writeData();
 	}
 
@@ -228,13 +227,13 @@ public class SpaceWar {
 
 	static String BenceUpdate(String[] input) {
 		int x = 0;
-		for (int i = 0; i < objs.size(); i++) {
+		for (int i = 0; i < objs.size(); i++)
 			if (objs.get(i) instanceof ObjShip) {
-				//System.out.println("input: "+input[x]);
+				// System.out.println("input: "+input[x]);
 				ObjShip ship = (ObjShip) objs.get(i);
 				ship.ddeg = Double.parseDouble(input[x].split(" ")[0])
 						* Constants.W_SHIP;
-				//System.out.println(((ObjShip)objs.get(i)).ddeg);
+				// System.out.println(((ObjShip)objs.get(i)).ddeg);
 				ship.dacc = Double.parseDouble(input[x].split(" ")[1])
 						* Constants.A_SHIP;
 				ship.shot = Boolean.parseBoolean(input[x].split(" ")[2]);
@@ -246,8 +245,6 @@ public class SpaceWar {
 				}
 				x++;
 			}
-			objs.get(i).update();
-		}
 		tick();
 		return getStatus();
 	}

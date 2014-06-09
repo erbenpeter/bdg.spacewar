@@ -44,12 +44,16 @@ public class Obj {
 	public void update() {
 
 	}
+	
+	public void postUpdate() {
+		
+	}
 
 	/**
 	 * Megadja az objektum leírását.
 	 */
 	public String getData() {
-		return  this.id+" "+this.getType();
+		return this.id + " " + this.getType();
 	}
 
 	/**
@@ -60,7 +64,7 @@ public class Obj {
 	}
 
 	public static class ObjMoving extends Obj {
-		public double x, y, vx, vy;
+		public double x, y, vx, vy, nx, ny;
 
 		public ObjMoving(double x, double y, double vx, double vy) {
 			super();
@@ -68,6 +72,8 @@ public class Obj {
 			this.y = y;
 			this.vx = vx;
 			this.vy = vy;
+			this.nx = x + vx;
+			this.ny = y + vy;
 		}
 
 		@Override
@@ -89,8 +95,9 @@ public class Obj {
 		public void update() {
 			double gx = 0D, gy = 0D;
 			for (int i = 0; i < SpaceWar.objs.size(); i++)
-				if (SpaceWar.objs.get(i).id != this.id) {
-					if (SpaceWar.objs.get(i).hasMass() && SpaceWar.objs.get(i).hasCoords()) {
+				if (SpaceWar.objs.get(i).id != this.id
+						&& SpaceWar.objs.get(i).hasCoords()) {
+					if (SpaceWar.objs.get(i).hasMass()) {
 						double r2 = (SpaceWar.objs.get(i).getX() - this.x)
 								* (SpaceWar.objs.get(i).getX() - this.x)
 								+ (SpaceWar.objs.get(i).getY() - this.y)
@@ -100,22 +107,25 @@ public class Obj {
 						gx += (SpaceWar.objs.get(i).getX() - this.x) * ratio;
 						gy += (SpaceWar.objs.get(i).getY() - this.y) * ratio;
 					}
-					if (!this.shouldRemove
-							&& (SpaceWar.objs.get(i).hasCoords() && SpaceWar.objs.get(i)
-									.getRadius()
-									* SpaceWar.objs.get(i).getRadius()
-									+ this.getRadius() * this.getRadius() >= (SpaceWar.objs
-									.get(i).getX() - this.x)
-									* (SpaceWar.objs.get(i).getX() - this.x)
-									+ (SpaceWar.objs.get(i).getY() - this.y)
-									* (SpaceWar.objs.get(i).getY() - this.y))) {
+					if (SpaceWar.objs.get(i).getRadius()
+							* SpaceWar.objs.get(i).getRadius()
+							+ this.getRadius() * this.getRadius() >= (SpaceWar.objs
+							.get(i).getX() - this.x)
+							* (SpaceWar.objs.get(i).getX() - this.x)
+							+ (SpaceWar.objs.get(i).getY() - this.y)
+							* (SpaceWar.objs.get(i).getY() - this.y))
 						this.shouldRemove = true;
-					}
 				}
 			this.vx += gx;
 			this.vy += gy;
-			this.x += this.vx;
-			this.y += this.vy;
+			this.nx = this.x + this.vx;
+			this.ny = this.y + this.vy;
+		}
+		
+		@Override
+		public void postUpdate(){
+			this.x = this.nx;
+			this.y = this.ny;
 		}
 
 		public static class ObjShip extends ObjMoving {
@@ -123,10 +133,12 @@ public class Obj {
 			public double ddeg, dacc;
 			public boolean shot;
 			public int player;
+			public long lastShotTime;
 
 			public ObjShip(double x, double y, double vx, double vy, double deg) {
 				super(x, y, vx, vy);
 				this.deg = deg;
+				this.lastShotTime = -Constants.T_BULLET;
 			}
 
 			@Override
@@ -149,10 +161,19 @@ public class Obj {
 				this.vx += Math.cos(this.deg) * this.dacc;
 				this.vy += Math.sin(this.deg) * this.dacc;
 				super.update();
-				if(this.shot){
-					SpaceWar.objs.add(new Obj.ObjMoving.ObjBullet(this.x+Math.cos(this.deg), this.y+Math.sin(this.deg), Math.cos(this.deg)*Constants.V_BULLET, Math.sin(this.deg)*Constants.V_BULLET));
+				if (this.shot
+						&& SpaceWar.time - this.lastShotTime > Constants.T_BULLET) {
+					this.lastShotTime = SpaceWar.time;
+					SpaceWar.objs.add(new Obj.ObjMoving.ObjBullet(this.x
+							+ Math.cos(this.deg)
+							* (Constants.R_BULLET + Constants.R_SHIP) * 1.1, this.y
+							+ Math.sin(this.deg)
+							* (Constants.R_BULLET + Constants.R_SHIP) * 1.1, this.vx
+							+ Math.cos(this.deg) * Constants.V_BULLET, this.vy
+							+ Math.sin(this.deg) * Constants.V_BULLET));
 				}
-				if(this.x < SpaceWar.minX || this.x > SpaceWar.maxX || this.y < SpaceWar.minY || this.y > SpaceWar.maxY)
+				if (this.x < SpaceWar.minX || this.x > SpaceWar.maxX
+						|| this.y < SpaceWar.minY || this.y > SpaceWar.maxY)
 					this.shouldRemove = true;
 			}
 
