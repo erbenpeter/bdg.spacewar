@@ -3,7 +3,7 @@ package bdg.spacewar.player;
 import bdg.spacewar.SpaceWarPlayer;
 
 public class Player implements SpaceWarPlayer {
-	boolean asd = false;
+	//boolean asd = false;
 	
 	@Override
 	public void configuration(String csv) {
@@ -12,10 +12,11 @@ public class Player implements SpaceWarPlayer {
 
 	@Override
 	public String round(String csv) {
-		if(!asd){
+		/*if(!asd){
 			asd = true;
 			return "0 0.08 true";
 		}
-		return "0 0.08 false";
+		return "0 0.08 false";*/
+		return "1 1 true";
 	}
 }

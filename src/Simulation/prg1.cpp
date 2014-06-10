@@ -8,5 +8,6 @@ int main(){
 	while(true){
         getline(cin, s);
 		cout << "1.0 0.0 false\n";
+		cout.flush();
 	}
 }

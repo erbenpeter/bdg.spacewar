@@ -110,7 +110,6 @@ public class SpaceWar {
 			for (int i = 0; i < players.length; i++)
 				if (players[i] != null)
 					try {
-						players[i].out.flush();
 						players[i].out.write(str.getBytes());
 						players[i].out.flush();
 						players[i].lastCommTime = System.currentTimeMillis();

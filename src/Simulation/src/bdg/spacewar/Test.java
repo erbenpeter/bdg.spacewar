@@ -9,6 +9,7 @@ public class Test {
 			while(System.in.available() > 0)
 				System.in.read();
 			System.out.println("1 0 false");
+			System.out.flush();
 		}
 	}
 }
