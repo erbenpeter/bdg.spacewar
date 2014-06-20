@@ -1,2 +1,4 @@
 *.db
 *.class
+src/HTML/website/tmp/*
+src/HTML/website/uploadedGames/games/*.txt
